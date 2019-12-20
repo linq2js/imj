@@ -1,0 +1,34 @@
+{
+  "name": "imj",
+  "version": "0.0.3",
+  "description": "Small, fast, easy to use immutable helper",
+  "main": "src/imj.js",
+  "types": "src/imj.d.ts",
+  "scripts": {
+    "test": "jest ./src",
+    "$publish": "npm test && npm publish"
+  },
+  "keywords": [
+    "immutable",
+    "immutable helper"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linq2js/imj.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/linq2js/imj/issues"
+  },
+  "homepage": "https://github.com/linq2js/imj#readme",
+  "jest": {},
+  "devDependencies": {
+    "@babel/plugin-transform-modules-commonjs": "^7.6.0",
+    "@babel/plugin-proposal-class-properties": "^7.7.4",
+    "@types/jest": "^24.0.13",
+    "jest": "^24.8.0",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^1.19.1"
+  }
+}
