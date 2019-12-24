@@ -68,6 +68,18 @@ test("toggle()", () => {
   });
 });
 
+test("replace()", () => {
+  const prev = { email: "linqtojs@yahoo.com" };
+  const update = imj({
+    email: ({ replace }) => replace("yahoo", "gmail")
+  });
+  const next = update(prev);
+
+  expect(next).toEqual({
+    email: "linqtojs@gmail.com"
+  });
+});
+
 test("push()", () => {
   const prev = { values: [1], other: { value: 100 } };
   const update = imj({
@@ -206,7 +218,7 @@ test("$one()", () => {
   const update = imj({
     array: {
       $one({ value }) {
-        return value.data % 2 === 1 ? { data: () => 5 } : false;
+        return value.data % 2 === 1 ? { data: () => 5 } : undefined;
       }
     }
   });
@@ -223,7 +235,7 @@ test("$many()", () => {
   const update = imj({
     array: {
       $many({ value }) {
-        return value.data % 2 === 1 ? { data: () => 5 } : false;
+        return value.data % 2 === 1 ? { data: () => 5 } : undefined;
       }
     }
   });
@@ -266,6 +278,38 @@ function LoadProducts(terms) {
     })
   };
 }
+
+test("custom $var", () => {
+  const update = imj({
+    $var: ({ $1 }) => ({ arg1: $1 }),
+    data: ({ arg1 }) => arg1
+  });
+
+  expect(update({ data: 0 }, 100)).toEqual({ data: 100 });
+});
+
+test("$return", () => {
+  const f = imj({
+    $return: true,
+    $args: "$action",
+    $async: ({ $action }) => [$action],
+    success: {
+      $args: "$step",
+      data: ({ value, $step }) => value + $step
+    }
+  });
+
+  const o = { data: 100 };
+  const a = f(o, "something");
+  expect(a).toEqual({
+    $async: ["something"],
+    success: expect.any(Function)
+  });
+  const b = a.success(o, 200);
+  expect(b).toEqual({
+    data: 300
+  });
+});
 
 function createAccessor(getterOrPropName, reducer, defaultValue) {
   let getter = getterOrPropName;
@@ -325,6 +369,31 @@ function createAccessor(getterOrPropName, reducer, defaultValue) {
 
   return accessor;
 }
+
+test("support evaluate var value from string", () => {
+  const update = imj({
+    $var: ({ $1 }) => ({
+      $test: {
+        data: $1
+      }
+    }),
+    data: "$test.data"
+  });
+  expect(update({ data: 0 }, 100)).toEqual({
+    data: 100
+  });
+});
+
+test("self assignment", () => {
+  const update = imj({
+    $self: ({ assign }) => assign({ a: 1 }, { b: 2 })
+  });
+  expect(update({ data: 0 })).toEqual({
+    data: 0,
+    a: 1,
+    b: 2
+  });
+});
 
 function createPropSelectorForAccessor(accessor) {
   accessor.prop = path => {
