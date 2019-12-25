@@ -1,6 +1,6 @@
 # imj
 
-Small, fast, easy to use immutable helper
+Not fastest but powerful immutable helper
 
 ## Simple reducer
 

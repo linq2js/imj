@@ -18,27 +18,14 @@ class Modifier {
     this.original = value;
     this.value = value;
     Object.assign(this, args, {
-      __arrayProxy: (method, clone, args = []) => {
-        let modifiedArray;
-        return this.mutate(
-          CloneMode.None,
-          original => {
-            if (typeof original === "undefined" || original === null) {
-              original = [];
-            }
-            modifiedArray = (clone ? original.slice(0) : original)[method](
-              ...args
-            );
-            return (
-              modifiedArray.length !== original.length ||
-              modifiedArray.some((item, index) => item !== original[index])
-            );
-          },
-          () => modifiedArray
-        );
-      },
+      result: () => this.__result
+    });
+  }
 
-      orderBy: selector => {
+  get orderBy() {
+    return (
+      this.__orderBy ||
+      (this.__orderBy = selector => {
         return this.sort((a, b) => {
           const aValue = selector(a);
           const bValue = selector(b);
@@ -47,33 +34,63 @@ class Modifier {
           }
           return aValue === bValue ? 0 : -1;
         });
-      },
+      })
+    );
+  }
 
-      reverse: () => {
+  get reverse() {
+    return (
+      this.__reverse ||
+      (this.__reverse = () => {
         return this.__arrayProxy("reverse", true);
-      },
+      })
+    );
+  }
 
-      sort: comparer => {
+  get sort() {
+    return (
+      this.__sort ||
+      (this.__sort = comparer => {
         return this.__arrayProxy("sort", true, [comparer]);
-      },
+      })
+    );
+  }
 
-      filter: predicate => {
+  get filter() {
+    return (
+      this.__filter ||
+      (this.__filter = predicate => {
         return this.__arrayProxy("filter", false, [predicate]);
-      },
+      })
+    );
+  }
 
-      slice: (from, to) => {
+  get slice() {
+    return (
+      this.__slice ||
+      (this.__slice = (from, to) => {
         return this.__arrayProxy("slice", false, [from, to]);
-      },
+      })
+    );
+  }
 
-      shift: () => {
+  get shift() {
+    return (
+      this.__shift ||
+      (this.__shift = () => {
         return this.mutate(
           CloneMode.Array,
           prev => prev && prev.length,
           next => next.shift()
         );
-      },
+      })
+    );
+  }
 
-      remove: (...keys) => {
+  get remove() {
+    return (
+      this.__remove ||
+      (this.__remove = (...keys) => {
         keys = keys.map(tryExtractPropNameFromAccessor);
 
         return this.mutate(
@@ -96,17 +113,27 @@ class Modifier {
             }
           }
         );
-      },
+      })
+    );
+  }
 
-      pop: () => {
+  get pop() {
+    return (
+      this.__pop ||
+      (this.__pop = () => {
         return this.mutate(
           CloneMode.Array,
           prev => prev && prev.length,
           next => next.pop()
         );
-      },
+      })
+    );
+  }
 
-      keep: (...keys) => {
+  get keep() {
+    return (
+      this.__keep ||
+      (this.__keep = (...keys) => {
         keys = keys.map(tryExtractPropNameFromAccessor);
         return this.mutate(
           CloneMode.Unknown,
@@ -134,36 +161,59 @@ class Modifier {
             }, {});
           }
         );
-      },
+      })
+    );
+  }
 
-      unshift: (...values) => {
+  get unshift() {
+    return (
+      this.__unshift ||
+      (this.__unshift = (...values) => {
         return this.mutate(
           CloneMode.None,
           () => !!values.length,
           next => values.concat(next || [])
         );
-      },
+      })
+    );
+  }
 
-      splice: (index, count, ...newItems) => {
+  get splice() {
+    return (
+      this.__splice ||
+      (this.__splice = (index, count, ...newItems) => {
         return this.mutate(
           CloneMode.Array,
           prev => prev && ((count && prev.length > index) || newItems.length),
           next => next.splice(index, count, ...newItems)
         );
-      },
+      })
+    );
+  }
 
-      result: () => this.__result,
-
-      unset: (...props) => {
+  get unset() {
+    return (
+      this.__unset ||
+      (this.__unset = (...props) => {
         props = props.map(tryExtractPropNameFromAccessor);
         return this.mutate(
           CloneMode.Unknown,
           prev => prev && props.some(prop => prop in prev),
           next => props.forEach(prop => delete next[prop])
         );
-      },
+      })
+    );
+  }
 
-      mutate: (cloneMode, checker, modifier, selector = defaultSelector) => {
+  get mutate() {
+    return (
+      this.__mutate ||
+      (this.__mutate = (
+        cloneMode,
+        checker,
+        modifier,
+        selector = defaultSelector
+      ) => {
         let value = this.value;
 
         // do nothing
@@ -196,17 +246,27 @@ class Modifier {
         }
 
         return this;
-      },
+      })
+    );
+  }
 
-      push: (...values) => {
+  get push() {
+    return (
+      this.__push ||
+      (this.__push = (...values) => {
         return this.mutate(
           CloneMode.None,
           () => values.length,
           next => [].concat(next || []).concat(values)
         );
-      },
+      })
+    );
+  }
 
-      assign: (...newProps) => {
+  get assign() {
+    return (
+      this.__assign ||
+      (this.__assign = (...newProps) => {
         const finalProps = Object.assign({}, ...newProps);
         return this.mutate(
           CloneMode.Object,
@@ -215,9 +275,14 @@ class Modifier {
             Object.keys(finalProps).some(key => finalProps[key] !== prev[key]),
           next => Object.assign(next, finalProps)
         );
-      },
+      })
+    );
+  }
 
-      map: mapper => {
+  get map() {
+    return (
+      this.__map ||
+      (this.__map = mapper => {
         let clonedValue;
         return this.mutate(
           CloneMode.None,
@@ -228,9 +293,14 @@ class Modifier {
           },
           () => clonedValue
         );
-      },
+      })
+    );
+  }
 
-      swap: (prop1, prop2) =>
+  get swap() {
+    return (
+      this.__swap ||
+      (this.__swap = (prop1, prop2) =>
         this.mutate(
           CloneMode.Unknown,
           prev => !prev || prev[prop1] !== prev[prop2],
@@ -239,21 +309,28 @@ class Modifier {
             next[prop1] = next[prop2];
             next[prop2] = temp;
           }
-        ),
+        ))
+    );
+  }
 
-      replace: (findWhat, replaceWith) =>
-        this.mutate(
-          CloneMode.None,
-          () => true,
-          next => next.replace(findWhat, replaceWith)
-        ),
+  get current() {
+    return this.__current || (this.__current = () => this.value);
+  }
 
-      toggle: () => {
+  get toggle() {
+    return (
+      this.__toggle ||
+      (this.__toggle = () => {
         this.value = !this.value;
         return this;
-      },
+      })
+    );
+  }
 
-      add: (value = 1) => {
+  get add() {
+    return (
+      this.__add ||
+      (this.__add = (value = 1) => {
         if (
           this.value instanceof Date ||
           (typeof this.value === "string" && typeof value !== "string")
@@ -272,10 +349,38 @@ class Modifier {
           this.value += value;
         }
         return this;
-      },
+      })
+    );
+  }
 
-      current: () => this.value
-    });
+  get replace() {
+    return (
+      this.__replace ||
+      (this.__replace = (findWhat, replaceWith) =>
+        this.mutate(
+          CloneMode.None,
+          () => true,
+          next => next.replace(findWhat, replaceWith)
+        ))
+    );
+  }
+
+  __arrayProxy(method, clone, args = []) {
+    let modifiedArray;
+    return this.mutate(
+      CloneMode.None,
+      original => {
+        if (typeof original === "undefined" || original === null) {
+          original = [];
+        }
+        modifiedArray = (clone ? original.slice(0) : original)[method](...args);
+        return (
+          modifiedArray.length !== original.length ||
+          modifiedArray.some((item, index) => item !== original[index])
+        );
+      },
+      () => modifiedArray
+    );
   }
 }
 
@@ -305,13 +410,16 @@ function processWhen(state, nextState, args, prop, subSpecs, path) {
 function processArrayItemSpecs(state, nextState, args, prop, subSpecs, path) {
   if (Array.isArray(nextState)) {
     const many = prop === "$many";
+    const defaultItemSpecs =
+      typeof subSpecs === "function" ? undefined : subSpecs;
     let found = false;
     let hasChange = false;
     const nextArray = nextState.map((item, index) => {
       if (found && !many) {
         return item;
       }
-      const itemSpecs = subSpecs({ value: item, index, ...args });
+      const itemSpecs =
+        defaultItemSpecs || subSpecs({value: item, index, ...args});
       if (!itemSpecs) return item;
       found = true;
       const newItem = processSpecs(item, itemSpecs, args, path + "." + index);

@@ -1,8 +1,8 @@
 {
   "name": "imj",
-  "version": "0.0.19",
-  "description": "Small, fast, easy to use immutable helper",
-  "main": "dist/imj.js",
+  "version": "0.0.21",
+  "description": "Not fastest but powerful immutable helper",
+  "main": "src/imj.js",
   "types": "src/imj.d.ts",
   "scripts": {
     "test": "jest ./src",

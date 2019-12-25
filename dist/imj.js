@@ -363,6 +363,7 @@ function processWhen(state, nextState, args, prop, subSpecs, path) {
 function processArrayItemSpecs(state, nextState, args, prop, subSpecs, path) {
   if (Array.isArray(nextState)) {
     var many = prop === "$many";
+    var defaultItemSpecs = typeof subSpecs === "function" ? undefined : subSpecs;
     var found = false;
     var hasChange = false;
     var nextArray = nextState.map(function (item, index) {
@@ -370,7 +371,7 @@ function processArrayItemSpecs(state, nextState, args, prop, subSpecs, path) {
         return item;
       }
 
-      var itemSpecs = subSpecs(_objectSpread({
+      var itemSpecs = defaultItemSpecs || subSpecs(_objectSpread({
         value: item,
         index: index
       }, args));
