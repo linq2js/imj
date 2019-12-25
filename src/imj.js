@@ -23,6 +23,7 @@ class Modifier {
   }
 
   get orderBy() {
+    this.__invoked = true;
     return (
       this.__orderBy ||
       (this.__orderBy = selector => {
@@ -39,6 +40,7 @@ class Modifier {
   }
 
   get reverse() {
+    this.__invoked = true;
     return (
       this.__reverse ||
       (this.__reverse = () => {
@@ -48,6 +50,7 @@ class Modifier {
   }
 
   get sort() {
+    this.__invoked = true;
     return (
       this.__sort ||
       (this.__sort = comparer => {
@@ -57,6 +60,7 @@ class Modifier {
   }
 
   get filter() {
+    this.__invoked = true;
     return (
       this.__filter ||
       (this.__filter = predicate => {
@@ -66,6 +70,7 @@ class Modifier {
   }
 
   get slice() {
+    this.__invoked = true;
     return (
       this.__slice ||
       (this.__slice = (from, to) => {
@@ -75,6 +80,7 @@ class Modifier {
   }
 
   get shift() {
+    this.__invoked = true;
     return (
       this.__shift ||
       (this.__shift = () => {
@@ -88,6 +94,7 @@ class Modifier {
   }
 
   get remove() {
+    this.__invoked = true;
     return (
       this.__remove ||
       (this.__remove = (...keys) => {
@@ -118,6 +125,7 @@ class Modifier {
   }
 
   get pop() {
+    this.__invoked = true;
     return (
       this.__pop ||
       (this.__pop = () => {
@@ -131,6 +139,7 @@ class Modifier {
   }
 
   get keep() {
+    this.__invoked = true;
     return (
       this.__keep ||
       (this.__keep = (...keys) => {
@@ -166,6 +175,7 @@ class Modifier {
   }
 
   get unshift() {
+    this.__invoked = true;
     return (
       this.__unshift ||
       (this.__unshift = (...values) => {
@@ -179,6 +189,7 @@ class Modifier {
   }
 
   get splice() {
+    this.__invoked = true;
     return (
       this.__splice ||
       (this.__splice = (index, count, ...newItems) => {
@@ -192,6 +203,7 @@ class Modifier {
   }
 
   get unset() {
+    this.__invoked = true;
     return (
       this.__unset ||
       (this.__unset = (...props) => {
@@ -206,6 +218,7 @@ class Modifier {
   }
 
   get mutate() {
+    this.__invoked = true;
     return (
       this.__mutate ||
       (this.__mutate = (
@@ -251,6 +264,7 @@ class Modifier {
   }
 
   get push() {
+    this.__invoked = true;
     return (
       this.__push ||
       (this.__push = (...values) => {
@@ -264,6 +278,7 @@ class Modifier {
   }
 
   get assign() {
+    this.__invoked = true;
     return (
       this.__assign ||
       (this.__assign = (...newProps) => {
@@ -280,6 +295,7 @@ class Modifier {
   }
 
   get map() {
+    this.__invoked = true;
     return (
       this.__map ||
       (this.__map = mapper => {
@@ -298,6 +314,7 @@ class Modifier {
   }
 
   get swap() {
+    this.__invoked = true;
     return (
       this.__swap ||
       (this.__swap = (prop1, prop2) =>
@@ -318,6 +335,7 @@ class Modifier {
   }
 
   get toggle() {
+    this.__invoked = true;
     return (
       this.__toggle ||
       (this.__toggle = () => {
@@ -328,6 +346,7 @@ class Modifier {
   }
 
   get add() {
+    this.__invoked = true;
     return (
       this.__add ||
       (this.__add = (value = 1) => {
@@ -354,6 +373,7 @@ class Modifier {
   }
 
   get replace() {
+    this.__invoked = true;
     return (
       this.__replace ||
       (this.__replace = (findWhat, replaceWith) =>
@@ -399,11 +419,23 @@ function processArgs(state, nextState, args, prop, subSpecs, path) {
 }
 
 function processWhen(state, nextState, args, prop, subSpecs, path) {
-  const [targetPath, valueToCompare, targetSpecs] = subSpecs;
-  const targetValue = getValue(targetPath, { value: nextState, ...args });
-  if (targetValue === valueToCompare) {
-    nextState = processSpecs(nextState, targetSpecs, args, path + ".");
+  const [targetPath] = subSpecs;
+  const targetValue = getValue(targetPath, {value: nextState, ...args});
+  // $when: ['target.value', valueToCompare, specs]
+  if (subSpecs.length > 2) {
+    const [, valueToCompare, targetSpecs] = subSpecs;
+    if (targetSpecs && targetValue === valueToCompare) {
+      nextState = processSpecs(nextState, targetSpecs, args, path + ".");
+    }
+  } else {
+    // $when: ['target.value', { spec map }]
+    const [, specMap = {}] = subSpecs;
+    const targetSpecs = specMap[targetValue];
+    if (targetSpecs) {
+      nextState = processSpecs(nextState, targetSpecs, args, path + ".");
+    }
   }
+
   return nextState;
 }
 
@@ -544,8 +576,10 @@ function processNormalProp(
   }
 
   // there is something changed
-  if (modifier && modifier.original !== modifier.value) {
+  if (modifier && modifier.__invoked) {
     nextPropValue = modifier.value;
+  } else if (nextPropValue instanceof Modifier) {
+    nextPropValue = nextPropValue.value;
   }
 
   if (returnSpecs) {

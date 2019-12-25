@@ -2,46 +2,150 @@
 
 Not fastest but powerful immutable helper
 
-## Simple reducer
+## Simple update
 
 ```js
 import imj from "imj";
 
-const reducer = imj({
-  counter: ({ value }) => value + 1
+const Increase = imj({
+  count: ({ value }) => value + 1
+});
+const Decrease = imj({
+  count: ({ value }) => value - 1
+});
+Increase({ count: 1 }); // { count: 2 }
+Decrease({ count: 1 }); // { count: 0 }
+```
+
+## Retrieve argument values
+
+```js
+import imj from "imj";
+
+const Increase = imj({
+  count: ({ value, $1 = 1 }) => value + $1
+});
+
+Increase({ count: 1 }); // { count: 2 }
+Increase({ count: 1 }, 2); // { count: 3 }
+```
+
+## Update array
+
+```js
+import imj from "imj";
+
+const AddTodo = imj({
+  // map second argument to $text and the third to $done
+  $args: "$text $done",
+  todos: ({ $text, $done, push }) =>
+    // push new item to todos array
+    push({ text: $text, done: $done })
+});
+
+AddTodo({ todos: [{ text: "first", done: false }] }, "second", true);
+// { todos: [ { text: 'first', done: false }, { text: 'second', done: true } ] }
+```
+
+## Update specified items in array
+
+```js
+import imj from "imj";
+
+const ToggleDoneSpecs = { done: ({ toggle }) => toggle() };
+
+const ToggleTodoByIndex = imj({
+  $args: "$index",
+  // create custom specs
+  $extend: ({ $index }) => ({
+    todos: {
+      // toggle done property of specified item ($index)
+      [$index]: ToggleDoneSpecs
+    }
+  })
+});
+
+const ToggleOneTodoByText = imj({
+  $args: "$text",
+  todos: {
+    // update first match only
+    $one: ({ value, $text }) =>
+      value.text === $text
+        ? // return specs for matched item
+          ToggleDoneSpecs
+        : // unless do nothing
+          null
+  }
+});
+
+const ToggleAllTodoByText = imj({
+  $args: "$text",
+  todos: {
+    // update all
+    $many: ({ value, $text }) =>
+      value.text === $text
+        ? // return specs for matched item
+          ToggleDoneSpecs
+        : // unless do nothing
+          null
+  }
+});
+
+const ToggleAll = imj({
+  todos: {
+    $many: ToggleDoneSpecs
+  }
 });
 ```
 
-## Reducer with input arguments
+## Simple redux reducer
 
 ```js
 import imj from "imj";
 
-const actionTypes = {
-  increase: 1,
-  decrease: 2
-};
-// using $when and return individual specs for each action type
-// can specific specs to update multiple props at once
-const reducer1 = imj({
-  // indicate that reducer retrieves 2 arguments, the first one is current target that need to update, the second one is 'action'
-  $args: "action",
-  $when_increase: [
-    "action.type",
-    actionTypes.increase,
-    { count: ({ value }) => value + 1 }
-  ],
-  $when_decrease: [
-    "action.type",
-    actionTypes.decrease,
-    { count: ({ value }) => value - 1 }
+const IncreaseAction = 1;
+const DecreaseAction = 2;
+const reducer = imj({
+  $when: [
+    "$1.type",
+    {
+      [IncreaseAction]: {
+        count: ({ value, $1: { payload = 1 } }) => value + payload
+      },
+      [DecreaseAction]: {
+        count: ({ value, $1: { payload = 1 } }) => value - payload
+      }
+    }
   ]
 });
-// using normal updater and check action.type before return approx value
-// this works with only prop
-const reducer2 = imj({
-  $args: "action",
-  count: ({ value, action }) =>
-    action.type === actionTypes.increase ? value + 1 : value - 1
+reducer({ count: 1 }, { type: IncreaseAction }); // { count: 2 }
+reducer({ count: 1 }, { type: IncreaseAction, payload: 2 }); // { count: 3 }
+reducer({ count: 1 }, { type: DecreaseAction }); // { count: 0 }
+reducer({ count: 1 }, { type: DecreaseAction, payload: 2 }); // { count: -1 }
+```
+
+## Other implementation
+
+```js
+import imj from "imj";
+
+const IncreaseAction = 1;
+const DecreaseAction = 2;
+const reducer = imj({
+  // define named $when
+  $when_increase: [
+    "$1.type",
+    IncreaseAction,
+    {
+      count: ({ value, $1: { payload = 1 } }) => value + payload
+    }
+  ],
+  $when_decrease: [
+    "$1.type",
+    DecreaseAction,
+    {
+      count: ({ value, $1: { payload = 1 } }) => value - payload
+    }
+  ]
 });
 ```

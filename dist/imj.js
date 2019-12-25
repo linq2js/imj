@@ -31,6 +31,10 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
 var CloneMode = {
   None: 0,
   Unknown: 1,
@@ -51,18 +55,29 @@ function arrayEqual(arr1, arr2) {
   });
 }
 
-var Modifier = function Modifier(value, args) {
-  var _this = this;
+var Modifier =
+/*#__PURE__*/
+function () {
+  function Modifier(value, args) {
+    var _this = this;
 
-  _classCallCheck(this, Modifier);
+    _classCallCheck(this, Modifier);
 
-  this.original = value;
-  this.value = value;
-  Object.assign(this, args, {
-    __arrayProxy: function __arrayProxy(method, clone) {
+    this.original = value;
+    this.value = value;
+    Object.assign(this, args, {
+      result: function result() {
+        return _this.__result;
+      }
+    });
+  }
+
+  _createClass(Modifier, [{
+    key: "__arrayProxy",
+    value: function __arrayProxy(method, clone) {
       var args = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
       var modifiedArray;
-      return _this.mutate(CloneMode.None, function (original) {
+      return this.mutate(CloneMode.None, function (original) {
         var _ref;
 
         if (typeof original === "undefined" || original === null) {
@@ -76,257 +91,382 @@ var Modifier = function Modifier(value, args) {
       }, function () {
         return modifiedArray;
       });
-    },
-    orderBy: function orderBy(selector) {
-      return _this.sort(function (a, b) {
-        var aValue = selector(a);
-        var bValue = selector(b);
-
-        if (aValue > bValue) {
-          return 1;
-        }
-
-        return aValue === bValue ? 0 : -1;
-      });
-    },
-    reverse: function reverse() {
-      return _this.__arrayProxy("reverse", true);
-    },
-    sort: function sort(comparer) {
-      return _this.__arrayProxy("sort", true, [comparer]);
-    },
-    filter: function filter(predicate) {
-      return _this.__arrayProxy("filter", false, [predicate]);
-    },
-    slice: function slice(from, to) {
-      return _this.__arrayProxy("slice", false, [from, to]);
-    },
-    shift: function shift() {
-      return _this.mutate(CloneMode.Array, function (prev) {
-        return prev && prev.length;
-      }, function (next) {
-        return next.shift();
-      });
-    },
-    remove: function remove() {
-      for (var _len = arguments.length, keys = new Array(_len), _key = 0; _key < _len; _key++) {
-        keys[_key] = arguments[_key];
-      }
-
-      keys = keys.map(tryExtractPropNameFromAccessor);
-      return _this.mutate(CloneMode.Unknown, function (prev) {
-        return prev && (prev instanceof Set || prev instanceof Map ? keys.some(function (key) {
-          return prev.has(key);
-        }) : keys.some(function (key) {
-          return key in prev;
-        }));
-      }, function (next) {
-        if (Array.isArray(next)) {
-          var sortedKeys = keys.sort();
-
-          while (sortedKeys.length) {
-            next.splice(sortedKeys.pop(), 1);
-          }
-        } else if (next instanceof Map || next instanceof Set) {
-          keys.forEach(function (key) {
-            return next["delete"](key);
-          });
-        } else {
-          keys.forEach(function (key) {
-            return delete next[key];
-          });
-        }
-      });
-    },
-    pop: function pop() {
-      return _this.mutate(CloneMode.Array, function (prev) {
-        return prev && prev.length;
-      }, function (next) {
-        return next.pop();
-      });
-    },
-    keep: function keep() {
-      for (var _len2 = arguments.length, keys = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-        keys[_key2] = arguments[_key2];
-      }
-
-      keys = keys.map(tryExtractPropNameFromAccessor);
-      return _this.mutate(CloneMode.Unknown, function () {
-        return true;
-      }, function (prev) {
-        return prev;
-      }, function (next) {
-        if (next instanceof Map) {
-          return keys.reduce(function (map, key) {
-            map.set(key, next.get(key));
-            return map;
-          }, new Map());
-        }
-
-        if (Array.isArray(next)) {
-          return keys.map(function (key) {
-            return next[key];
-          });
-        }
-
-        if (typeof next === "undefined" || next === null) {
-          return {};
-        }
-
-        return keys.reduce(function (obj, key) {
-          obj[key] = next[key];
-          return obj;
-        }, {});
-      });
-    },
-    unshift: function unshift() {
-      for (var _len3 = arguments.length, values = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
-        values[_key3] = arguments[_key3];
-      }
-
-      return _this.mutate(CloneMode.None, function () {
-        return !!values.length;
-      }, function (next) {
-        return values.concat(next || []);
-      });
-    },
-    splice: function splice(index, count) {
-      for (var _len4 = arguments.length, newItems = new Array(_len4 > 2 ? _len4 - 2 : 0), _key4 = 2; _key4 < _len4; _key4++) {
-        newItems[_key4 - 2] = arguments[_key4];
-      }
-
-      return _this.mutate(CloneMode.Array, function (prev) {
-        return prev && (count && prev.length > index || newItems.length);
-      }, function (next) {
-        return next.splice.apply(next, [index, count].concat(newItems));
-      });
-    },
-    result: function result() {
-      return _this.__result;
-    },
-    unset: function unset() {
-      for (var _len5 = arguments.length, props = new Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
-        props[_key5] = arguments[_key5];
-      }
-
-      props = props.map(tryExtractPropNameFromAccessor);
-      return _this.mutate(CloneMode.Unknown, function (prev) {
-        return prev && props.some(function (prop) {
-          return prop in prev;
-        });
-      }, function (next) {
-        return props.forEach(function (prop) {
-          return delete next[prop];
-        });
-      });
-    },
-    mutate: function mutate(cloneMode, checker, modifier) {
-      var selector = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : defaultSelector;
-      var value = _this.value; // do nothing
-
-      if (!checker(value)) {
-        return _this;
-      }
-
-      if (cloneMode && value === _this.original) {
-        if (typeof value === "undefined" || value === null) {
-          value = cloneMode === CloneMode.Array ? [] : {};
-        } else if (Array.isArray(value)) {
-          value = selector(value).slice(0);
-        } else if (value instanceof Date) {
-          value = new Date(value.getTime());
-        } else if (value instanceof Set) {
-          value = new Set(selector(value));
-        } else if (value instanceof Map) {
-          value = new Map(selector(value));
-        } else if (_typeof(value) === "object") {
-          value = Object.assign({}, selector(value));
-        }
-      }
-
-      var next = modifier(value);
-
-      if (cloneMode) {
-        _this.value = value;
-        _this.__result = next;
-      } else {
-        _this.value = next;
-      }
-
-      return _this;
-    },
-    push: function push() {
-      for (var _len6 = arguments.length, values = new Array(_len6), _key6 = 0; _key6 < _len6; _key6++) {
-        values[_key6] = arguments[_key6];
-      }
-
-      return _this.mutate(CloneMode.None, function () {
-        return values.length;
-      }, function (next) {
-        return [].concat(next || []).concat(values);
-      });
-    },
-    assign: function assign() {
-      for (var _len7 = arguments.length, newProps = new Array(_len7), _key7 = 0; _key7 < _len7; _key7++) {
-        newProps[_key7] = arguments[_key7];
-      }
-
-      var finalProps = Object.assign.apply(Object, [{}].concat(newProps));
-      return _this.mutate(CloneMode.Object, function (prev) {
-        return !prev || Object.keys(finalProps).some(function (key) {
-          return finalProps[key] !== prev[key];
-        });
-      }, function (next) {
-        return Object.assign(next, finalProps);
-      });
-    },
-    map: function map(mapper) {
-      var clonedValue;
-      return _this.mutate(CloneMode.None, function (prev) {
-        if (!prev) return true;
-        clonedValue = prev.map(mapper);
-        return !arrayEqual(clonedValue, prev);
-      }, function () {
-        return clonedValue;
-      });
-    },
-    swap: function swap(prop1, prop2) {
-      return _this.mutate(CloneMode.Unknown, function (prev) {
-        return !prev || prev[prop1] !== prev[prop2];
-      }, function (next) {
-        var temp = next[prop1];
-        next[prop1] = next[prop2];
-        next[prop2] = temp;
-      });
-    },
-    replace: function replace(findWhat, replaceWith) {
-      return _this.mutate(CloneMode.None, function () {
-        return true;
-      }, function (next) {
-        return next.replace(findWhat, replaceWith);
-      });
-    },
-    toggle: function toggle() {
-      _this.value = !_this.value;
-      return _this;
-    },
-    add: function add() {
-      var value = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
-
-      if (_this.value instanceof Date || typeof _this.value === "string" && typeof value !== "string") {
-        var d = new Date(_this.value);
-        _this.value = new Date(d.getFullYear() + (value.years || 0), d.getMonth() + (value.months || 0), d.getDate() + (value.days || 0), d.getHours() + (value.hours || 0), d.getMinutes() + (value.minutes || 0), d.getSeconds() + (value.seconds || 0), d.getMilliseconds() + (value.milliseconds || 0));
-      } else {
-        _this.value += value;
-      }
-
-      return _this;
-    },
-    current: function current() {
-      return _this.value;
     }
-  });
-};
+  }, {
+    key: "orderBy",
+    get: function get() {
+      var _this2 = this;
+
+      return this.__orderBy || (this.__orderBy = function (selector) {
+        return _this2.sort(function (a, b) {
+          var aValue = selector(a);
+          var bValue = selector(b);
+
+          if (aValue > bValue) {
+            return 1;
+          }
+
+          return aValue === bValue ? 0 : -1;
+        });
+      });
+    }
+  }, {
+    key: "reverse",
+    get: function get() {
+      var _this3 = this;
+
+      return this.__reverse || (this.__reverse = function () {
+        return _this3.__arrayProxy("reverse", true);
+      });
+    }
+  }, {
+    key: "sort",
+    get: function get() {
+      var _this4 = this;
+
+      return this.__sort || (this.__sort = function (comparer) {
+        return _this4.__arrayProxy("sort", true, [comparer]);
+      });
+    }
+  }, {
+    key: "filter",
+    get: function get() {
+      var _this5 = this;
+
+      return this.__filter || (this.__filter = function (predicate) {
+        return _this5.__arrayProxy("filter", false, [predicate]);
+      });
+    }
+  }, {
+    key: "slice",
+    get: function get() {
+      var _this6 = this;
+
+      return this.__slice || (this.__slice = function (from, to) {
+        return _this6.__arrayProxy("slice", false, [from, to]);
+      });
+    }
+  }, {
+    key: "shift",
+    get: function get() {
+      var _this7 = this;
+
+      return this.__shift || (this.__shift = function () {
+        return _this7.mutate(CloneMode.Array, function (prev) {
+          return prev && prev.length;
+        }, function (next) {
+          return next.shift();
+        });
+      });
+    }
+  }, {
+    key: "remove",
+    get: function get() {
+      var _this8 = this;
+
+      return this.__remove || (this.__remove = function () {
+        for (var _len = arguments.length, keys = new Array(_len), _key = 0; _key < _len; _key++) {
+          keys[_key] = arguments[_key];
+        }
+
+        keys = keys.map(tryExtractPropNameFromAccessor);
+        return _this8.mutate(CloneMode.Unknown, function (prev) {
+          return prev && (prev instanceof Set || prev instanceof Map ? keys.some(function (key) {
+            return prev.has(key);
+          }) : keys.some(function (key) {
+            return key in prev;
+          }));
+        }, function (next) {
+          if (Array.isArray(next)) {
+            var sortedKeys = keys.sort();
+
+            while (sortedKeys.length) {
+              next.splice(sortedKeys.pop(), 1);
+            }
+          } else if (next instanceof Map || next instanceof Set) {
+            keys.forEach(function (key) {
+              return next["delete"](key);
+            });
+          } else {
+            keys.forEach(function (key) {
+              return delete next[key];
+            });
+          }
+        });
+      });
+    }
+  }, {
+    key: "pop",
+    get: function get() {
+      var _this9 = this;
+
+      return this.__pop || (this.__pop = function () {
+        return _this9.mutate(CloneMode.Array, function (prev) {
+          return prev && prev.length;
+        }, function (next) {
+          return next.pop();
+        });
+      });
+    }
+  }, {
+    key: "keep",
+    get: function get() {
+      var _this10 = this;
+
+      return this.__keep || (this.__keep = function () {
+        for (var _len2 = arguments.length, keys = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+          keys[_key2] = arguments[_key2];
+        }
+
+        keys = keys.map(tryExtractPropNameFromAccessor);
+        return _this10.mutate(CloneMode.Unknown, function () {
+          return true;
+        }, function (prev) {
+          return prev;
+        }, function (next) {
+          if (next instanceof Map) {
+            return keys.reduce(function (map, key) {
+              map.set(key, next.get(key));
+              return map;
+            }, new Map());
+          }
+
+          if (Array.isArray(next)) {
+            return keys.map(function (key) {
+              return next[key];
+            });
+          }
+
+          if (typeof next === "undefined" || next === null) {
+            return {};
+          }
+
+          return keys.reduce(function (obj, key) {
+            obj[key] = next[key];
+            return obj;
+          }, {});
+        });
+      });
+    }
+  }, {
+    key: "unshift",
+    get: function get() {
+      var _this11 = this;
+
+      return this.__unshift || (this.__unshift = function () {
+        for (var _len3 = arguments.length, values = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+          values[_key3] = arguments[_key3];
+        }
+
+        return _this11.mutate(CloneMode.None, function () {
+          return !!values.length;
+        }, function (next) {
+          return values.concat(next || []);
+        });
+      });
+    }
+  }, {
+    key: "splice",
+    get: function get() {
+      var _this12 = this;
+
+      return this.__splice || (this.__splice = function (index, count) {
+        for (var _len4 = arguments.length, newItems = new Array(_len4 > 2 ? _len4 - 2 : 0), _key4 = 2; _key4 < _len4; _key4++) {
+          newItems[_key4 - 2] = arguments[_key4];
+        }
+
+        return _this12.mutate(CloneMode.Array, function (prev) {
+          return prev && (count && prev.length > index || newItems.length);
+        }, function (next) {
+          return next.splice.apply(next, [index, count].concat(newItems));
+        });
+      });
+    }
+  }, {
+    key: "unset",
+    get: function get() {
+      var _this13 = this;
+
+      return this.__unset || (this.__unset = function () {
+        for (var _len5 = arguments.length, props = new Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
+          props[_key5] = arguments[_key5];
+        }
+
+        props = props.map(tryExtractPropNameFromAccessor);
+        return _this13.mutate(CloneMode.Unknown, function (prev) {
+          return prev && props.some(function (prop) {
+            return prop in prev;
+          });
+        }, function (next) {
+          return props.forEach(function (prop) {
+            return delete next[prop];
+          });
+        });
+      });
+    }
+  }, {
+    key: "mutate",
+    get: function get() {
+      var _this14 = this;
+
+      return this.__mutate || (this.__mutate = function (cloneMode, checker, modifier) {
+        var selector = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : defaultSelector;
+        var value = _this14.value; // do nothing
+
+        if (!checker(value)) {
+          return _this14;
+        }
+
+        if (cloneMode && value === _this14.original) {
+          if (typeof value === "undefined" || value === null) {
+            value = cloneMode === CloneMode.Array ? [] : {};
+          } else if (Array.isArray(value)) {
+            value = selector(value).slice(0);
+          } else if (value instanceof Date) {
+            value = new Date(value.getTime());
+          } else if (value instanceof Set) {
+            value = new Set(selector(value));
+          } else if (value instanceof Map) {
+            value = new Map(selector(value));
+          } else if (_typeof(value) === "object") {
+            value = Object.assign({}, selector(value));
+          }
+        }
+
+        var next = modifier(value);
+
+        if (cloneMode) {
+          _this14.value = value;
+          _this14.__result = next;
+        } else {
+          _this14.value = next;
+        }
+
+        return _this14;
+      });
+    }
+  }, {
+    key: "push",
+    get: function get() {
+      var _this15 = this;
+
+      return this.__push || (this.__push = function () {
+        for (var _len6 = arguments.length, values = new Array(_len6), _key6 = 0; _key6 < _len6; _key6++) {
+          values[_key6] = arguments[_key6];
+        }
+
+        return _this15.mutate(CloneMode.None, function () {
+          return values.length;
+        }, function (next) {
+          return [].concat(next || []).concat(values);
+        });
+      });
+    }
+  }, {
+    key: "assign",
+    get: function get() {
+      var _this16 = this;
+
+      return this.__assign || (this.__assign = function () {
+        for (var _len7 = arguments.length, newProps = new Array(_len7), _key7 = 0; _key7 < _len7; _key7++) {
+          newProps[_key7] = arguments[_key7];
+        }
+
+        var finalProps = Object.assign.apply(Object, [{}].concat(newProps));
+        return _this16.mutate(CloneMode.Object, function (prev) {
+          return !prev || Object.keys(finalProps).some(function (key) {
+            return finalProps[key] !== prev[key];
+          });
+        }, function (next) {
+          return Object.assign(next, finalProps);
+        });
+      });
+    }
+  }, {
+    key: "map",
+    get: function get() {
+      var _this17 = this;
+
+      return this.__map || (this.__map = function (mapper) {
+        var clonedValue;
+        return _this17.mutate(CloneMode.None, function (prev) {
+          if (!prev) return true;
+          clonedValue = prev.map(mapper);
+          return !arrayEqual(clonedValue, prev);
+        }, function () {
+          return clonedValue;
+        });
+      });
+    }
+  }, {
+    key: "swap",
+    get: function get() {
+      var _this18 = this;
+
+      return this.__swap || (this.__swap = function (prop1, prop2) {
+        return _this18.mutate(CloneMode.Unknown, function (prev) {
+          return !prev || prev[prop1] !== prev[prop2];
+        }, function (next) {
+          var temp = next[prop1];
+          next[prop1] = next[prop2];
+          next[prop2] = temp;
+        });
+      });
+    }
+  }, {
+    key: "current",
+    get: function get() {
+      var _this19 = this;
+
+      return this.__current || (this.__current = function () {
+        return _this19.value;
+      });
+    }
+  }, {
+    key: "toggle",
+    get: function get() {
+      var _this20 = this;
+
+      return this.__toggle || (this.__toggle = function () {
+        _this20.value = !_this20.value;
+        return _this20;
+      });
+    }
+  }, {
+    key: "add",
+    get: function get() {
+      var _this21 = this;
+
+      return this.__add || (this.__add = function () {
+        var value = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+
+        if (_this21.value instanceof Date || typeof _this21.value === "string" && typeof value !== "string") {
+          var d = new Date(_this21.value);
+          _this21.value = new Date(d.getFullYear() + (value.years || 0), d.getMonth() + (value.months || 0), d.getDate() + (value.days || 0), d.getHours() + (value.hours || 0), d.getMinutes() + (value.minutes || 0), d.getSeconds() + (value.seconds || 0), d.getMilliseconds() + (value.milliseconds || 0));
+        } else {
+          _this21.value += value;
+        }
+
+        return _this21;
+      });
+    }
+  }, {
+    key: "replace",
+    get: function get() {
+      var _this22 = this;
+
+      return this.__replace || (this.__replace = function (findWhat, replaceWith) {
+        return _this22.mutate(CloneMode.None, function () {
+          return true;
+        }, function (next) {
+          return next.replace(findWhat, replaceWith);
+        });
+      });
+    }
+  }]);
+
+  return Modifier;
+}();
 
 function tryExtractPropNameFromAccessor(prop, fallback) {
   if (typeof prop === "function" && prop.propName) {

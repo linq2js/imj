@@ -386,12 +386,39 @@ test("support evaluate var value from string", () => {
 
 test("self assignment", () => {
   const update = imj({
-    $self: ({ assign }) => assign({ a: 1 }, { b: 2 })
+    $self: ({assign}) => assign({a: 1}, {b: 2})
   });
-  expect(update({ data: 0 })).toEqual({
+  expect(update({data: 0})).toEqual({
     data: 0,
     a: 1,
     b: 2
+  });
+});
+
+test("handle action.type", () => {
+  const IncreaseAction = 1;
+  const DecreaseAction = 2;
+  const reducer = imj({
+    $when: [
+      "$1.type",
+      {
+        [IncreaseAction]: {
+          count: ({value, $1: {payload = 1}}) => value + payload
+        },
+        [DecreaseAction]: {
+          count: ({value, $1: {payload = 1}}) => value - payload
+        }
+      }
+    ]
+  });
+
+  expect(reducer({count: 1}, {type: IncreaseAction})).toEqual({count: 2});
+  expect(reducer({count: 1}, {type: IncreaseAction, payload: 2})).toEqual({
+    count: 3
+  });
+  expect(reducer({count: 1}, {type: DecreaseAction})).toEqual({count: 0});
+  expect(reducer({count: 1}, {type: DecreaseAction, payload: 2})).toEqual({
+    count: -1
   });
 });
 
