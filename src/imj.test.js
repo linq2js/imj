@@ -422,6 +422,93 @@ test("handle action.type", () => {
   });
 });
 
+test("using literal shortcut", () => {
+  const prev = {
+    count: 0,
+    offset: 0,
+    searchText: "",
+    items: null,
+    requestId: null,
+    status: {
+      isError: false,
+      isLoading: false,
+      isSuccess: false
+    },
+    error: {},
+    selectedItem: {},
+    editedItem: {}
+  };
+
+  const next = imj(prev, {
+    count: [120],
+    offset: [10],
+    searchText: ["Text"],
+    items: [null],
+    status: {
+      isLoading: [true],
+      isError: [false],
+      isSuccess: [false]
+    },
+    selectedItem: [undefined],
+    editedItem: [undefined],
+    error: [undefined]
+  });
+
+  expect(next).toEqual({
+    count: 120,
+    offset: 10,
+    searchText: "Text",
+    items: null,
+    requestId: null,
+    status: {
+      isLoading: true,
+      isError: false,
+      isSuccess: false
+    },
+    error: undefined,
+    selectedItem: undefined,
+    editedItem: undefined
+  });
+});
+
+test("extend() specs", () => {
+  const mainReducerSpecs = {
+    $when: ["$1.type", "loadProducts", {products: [[{id: 1}, {id: 2}]]}]
+  };
+
+  const mainReducer = imj(mainReducerSpecs);
+
+  mainReducer.extend({
+    $scope_user: {
+      $when: ["$1.type", "loadProfile", {profile: [{name: "admin"}]}]
+    }
+  });
+
+  mainReducer.extend({
+    $scope_blog: {
+      $when: ["$1.type", "loadPosts", {posts: [[{id: 3}, {id: 4}]]}]
+    }
+  });
+
+  let state = {};
+
+  state = mainReducer(state, {type: "loadProfile"});
+  expect(state).toEqual({profile: {name: "admin"}});
+
+  state = mainReducer(state, {type: "loadProducts"});
+  expect(state).toEqual({
+    profile: {name: "admin"},
+    products: [{id: 1}, {id: 2}]
+  });
+
+  state = mainReducer(state, {type: "loadPosts"});
+  expect(state).toEqual({
+    profile: {name: "admin"},
+    products: [{id: 1}, {id: 2}],
+    posts: [{id: 3}, {id: 4}]
+  });
+});
+
 function createPropSelectorForAccessor(accessor) {
   accessor.prop = path => {
     if (accessor[`__` + path]) {

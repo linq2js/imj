@@ -97,6 +97,7 @@ function () {
     get: function get() {
       var _this2 = this;
 
+      this.__invoked = true;
       return this.__orderBy || (this.__orderBy = function (selector) {
         return _this2.sort(function (a, b) {
           var aValue = selector(a);
@@ -115,6 +116,7 @@ function () {
     get: function get() {
       var _this3 = this;
 
+      this.__invoked = true;
       return this.__reverse || (this.__reverse = function () {
         return _this3.__arrayProxy("reverse", true);
       });
@@ -124,6 +126,7 @@ function () {
     get: function get() {
       var _this4 = this;
 
+      this.__invoked = true;
       return this.__sort || (this.__sort = function (comparer) {
         return _this4.__arrayProxy("sort", true, [comparer]);
       });
@@ -133,6 +136,7 @@ function () {
     get: function get() {
       var _this5 = this;
 
+      this.__invoked = true;
       return this.__filter || (this.__filter = function (predicate) {
         return _this5.__arrayProxy("filter", false, [predicate]);
       });
@@ -142,6 +146,7 @@ function () {
     get: function get() {
       var _this6 = this;
 
+      this.__invoked = true;
       return this.__slice || (this.__slice = function (from, to) {
         return _this6.__arrayProxy("slice", false, [from, to]);
       });
@@ -151,6 +156,7 @@ function () {
     get: function get() {
       var _this7 = this;
 
+      this.__invoked = true;
       return this.__shift || (this.__shift = function () {
         return _this7.mutate(CloneMode.Array, function (prev) {
           return prev && prev.length;
@@ -164,6 +170,7 @@ function () {
     get: function get() {
       var _this8 = this;
 
+      this.__invoked = true;
       return this.__remove || (this.__remove = function () {
         for (var _len = arguments.length, keys = new Array(_len), _key = 0; _key < _len; _key++) {
           keys[_key] = arguments[_key];
@@ -200,6 +207,7 @@ function () {
     get: function get() {
       var _this9 = this;
 
+      this.__invoked = true;
       return this.__pop || (this.__pop = function () {
         return _this9.mutate(CloneMode.Array, function (prev) {
           return prev && prev.length;
@@ -213,6 +221,7 @@ function () {
     get: function get() {
       var _this10 = this;
 
+      this.__invoked = true;
       return this.__keep || (this.__keep = function () {
         for (var _len2 = arguments.length, keys = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
           keys[_key2] = arguments[_key2];
@@ -253,6 +262,7 @@ function () {
     get: function get() {
       var _this11 = this;
 
+      this.__invoked = true;
       return this.__unshift || (this.__unshift = function () {
         for (var _len3 = arguments.length, values = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
           values[_key3] = arguments[_key3];
@@ -270,6 +280,7 @@ function () {
     get: function get() {
       var _this12 = this;
 
+      this.__invoked = true;
       return this.__splice || (this.__splice = function (index, count) {
         for (var _len4 = arguments.length, newItems = new Array(_len4 > 2 ? _len4 - 2 : 0), _key4 = 2; _key4 < _len4; _key4++) {
           newItems[_key4 - 2] = arguments[_key4];
@@ -287,6 +298,7 @@ function () {
     get: function get() {
       var _this13 = this;
 
+      this.__invoked = true;
       return this.__unset || (this.__unset = function () {
         for (var _len5 = arguments.length, props = new Array(_len5), _key5 = 0; _key5 < _len5; _key5++) {
           props[_key5] = arguments[_key5];
@@ -309,6 +321,7 @@ function () {
     get: function get() {
       var _this14 = this;
 
+      this.__invoked = true;
       return this.__mutate || (this.__mutate = function (cloneMode, checker, modifier) {
         var selector = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : defaultSelector;
         var value = _this14.value; // do nothing
@@ -350,6 +363,7 @@ function () {
     get: function get() {
       var _this15 = this;
 
+      this.__invoked = true;
       return this.__push || (this.__push = function () {
         for (var _len6 = arguments.length, values = new Array(_len6), _key6 = 0; _key6 < _len6; _key6++) {
           values[_key6] = arguments[_key6];
@@ -367,6 +381,7 @@ function () {
     get: function get() {
       var _this16 = this;
 
+      this.__invoked = true;
       return this.__assign || (this.__assign = function () {
         for (var _len7 = arguments.length, newProps = new Array(_len7), _key7 = 0; _key7 < _len7; _key7++) {
           newProps[_key7] = arguments[_key7];
@@ -387,6 +402,7 @@ function () {
     get: function get() {
       var _this17 = this;
 
+      this.__invoked = true;
       return this.__map || (this.__map = function (mapper) {
         var clonedValue;
         return _this17.mutate(CloneMode.None, function (prev) {
@@ -403,6 +419,7 @@ function () {
     get: function get() {
       var _this18 = this;
 
+      this.__invoked = true;
       return this.__swap || (this.__swap = function (prop1, prop2) {
         return _this18.mutate(CloneMode.Unknown, function (prev) {
           return !prev || prev[prop1] !== prev[prop2];
@@ -427,6 +444,7 @@ function () {
     get: function get() {
       var _this20 = this;
 
+      this.__invoked = true;
       return this.__toggle || (this.__toggle = function () {
         _this20.value = !_this20.value;
         return _this20;
@@ -437,6 +455,7 @@ function () {
     get: function get() {
       var _this21 = this;
 
+      this.__invoked = true;
       return this.__add || (this.__add = function () {
         var value = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
 
@@ -455,6 +474,7 @@ function () {
     get: function get() {
       var _this22 = this;
 
+      this.__invoked = true;
       return this.__replace || (this.__replace = function (findWhat, replaceWith) {
         return _this22.mutate(CloneMode.None, function () {
           return true;
@@ -484,17 +504,32 @@ function processArgs(state, nextState, args, prop, subSpecs, path) {
 }
 
 function processWhen(state, nextState, args, prop, subSpecs, path) {
-  var _subSpecs = _slicedToArray(subSpecs, 3),
-      targetPath = _subSpecs[0],
-      valueToCompare = _subSpecs[1],
-      targetSpecs = _subSpecs[2];
+  var _subSpecs = _slicedToArray(subSpecs, 1),
+      targetPath = _subSpecs[0];
 
   var targetValue = getValue(targetPath, _objectSpread({
     value: nextState
-  }, args));
+  }, args)); // $when: ['target.value', valueToCompare, specs]
 
-  if (targetValue === valueToCompare) {
-    nextState = processSpecs(nextState, targetSpecs, args, path + ".");
+  if (subSpecs.length > 2) {
+    var _subSpecs2 = _slicedToArray(subSpecs, 3),
+        valueToCompare = _subSpecs2[1],
+        targetSpecs = _subSpecs2[2];
+
+    if (targetSpecs && targetValue === valueToCompare) {
+      nextState = processSpecs(nextState, targetSpecs, args, path + ".");
+    }
+  } else {
+    // $when: ['target.value', { spec map }]
+    var _subSpecs3 = _slicedToArray(subSpecs, 2),
+        _subSpecs3$ = _subSpecs3[1],
+        specMap = _subSpecs3$ === void 0 ? {} : _subSpecs3$;
+
+    var _targetSpecs = specMap[targetValue];
+
+    if (_targetSpecs) {
+      nextState = processSpecs(nextState, _targetSpecs, args, path + ".");
+    }
   }
 
   return nextState;
@@ -535,10 +570,10 @@ function processArrayItemSpecs(state, nextState, args, prop, subSpecs, path) {
 }
 
 function processIf(state, nextState, args, prop, subSpecs, path) {
-  var _subSpecs2 = _slicedToArray(subSpecs, 3),
-      condition = _subSpecs2[0],
-      $then = _subSpecs2[1],
-      $else = _subSpecs2[2];
+  var _subSpecs4 = _slicedToArray(subSpecs, 3),
+      condition = _subSpecs4[0],
+      $then = _subSpecs4[1],
+      $else = _subSpecs4[2];
 
   var isTruth = typeof condition === "function" ? condition(_objectSpread({
     value: nextState
@@ -614,14 +649,18 @@ function processNormalProp(state, nextState, args, prop, subSpecs, returnSpecs, 
     modifier = new Modifier(prevPropValue, args);
     nextPropValue = subSpecs(modifier);
   } else if (typeof subSpecs === "string") {
-    nextPropValue = getValue(subSpecs, args);
+    nextPropValue = getValue(subSpecs, _objectSpread({
+      value: prevPropValue
+    }, args));
   } else {
     nextPropValue = processSpecs(prevPropValue, subSpecs, args, path + prop + ".");
   } // there is something changed
 
 
-  if (modifier && modifier.original !== modifier.value) {
+  if (modifier && modifier.__invoked) {
     nextPropValue = modifier.value;
+  } else if (nextPropValue instanceof Modifier) {
+    nextPropValue = nextPropValue.value;
   }
 
   if (returnSpecs) {

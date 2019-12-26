@@ -1,6 +1,6 @@
 {
   "name": "imj",
-  "version": "0.0.22",
+  "version": "0.0.24",
   "description": "Not fastest but powerful immutable helper",
   "main": "src/imj.js",
   "types": "src/imj.d.ts",

@@ -5,6 +5,7 @@ const CloneMode = {
   Array: 3
 };
 const defaultSelector = x => x;
+const specEntryCache = new WeakMap();
 
 function arrayEqual(arr1, arr2) {
   if (arr1 === arr2) return true;
@@ -420,7 +421,10 @@ function processArgs(state, nextState, args, prop, subSpecs, path) {
 
 function processWhen(state, nextState, args, prop, subSpecs, path) {
   const [targetPath] = subSpecs;
-  const targetValue = getValue(targetPath, {value: nextState, ...args});
+  const targetValue = getValue(
+    targetPath,
+    getContextVars(nextState, nextState, args)
+  );
   // $when: ['target.value', valueToCompare, specs]
   if (subSpecs.length > 2) {
     const [, valueToCompare, targetSpecs] = subSpecs;
@@ -451,7 +455,8 @@ function processArrayItemSpecs(state, nextState, args, prop, subSpecs, path) {
         return item;
       }
       const itemSpecs =
-        defaultItemSpecs || subSpecs({value: item, index, ...args});
+        defaultItemSpecs ||
+        subSpecs(getContextVars(item, nextState, args, index));
       if (!itemSpecs) return item;
       found = true;
       const newItem = processSpecs(item, itemSpecs, args, path + "." + index);
@@ -471,7 +476,7 @@ function processIf(state, nextState, args, prop, subSpecs, path) {
   const [condition, $then, $else] = subSpecs;
   const isTruth =
     typeof condition === "function"
-      ? condition({ value: nextState, ...args })
+      ? condition(getContextVars(nextState, nextState, args))
       : condition;
 
   if (isTruth) {
@@ -486,13 +491,13 @@ function processIf(state, nextState, args, prop, subSpecs, path) {
 
 function processVar(state, nextState, args, prop, subSpecs, path) {
   if (typeof subSpecs === "function") {
-    Object.assign(args, subSpecs({ value: nextState, ...args }));
+    Object.assign(args, subSpecs(getContextVars(nextState, nextState, args)));
   } else {
     Object.entries(subSpecs).forEach(([varName, path]) => {
       path = tryExtractPropNameFromAccessor(path);
       args[varName] =
         typeof path === "function"
-          ? path({ value: nextState, ...args })
+          ? path(getContextVars(nextState, nextState, args))
           : getValue(path, nextState);
     });
   }
@@ -527,11 +532,16 @@ function processNormalProp(
   returnValue,
   path
 ) {
+  const type = typeof subSpecs;
+  let isFunction = false;
+  let isString = false;
+  let isObject = false;
+  let isArray = false;
   if (
-    typeof subSpecs === "object" ||
-    typeof subSpecs === "string" ||
-    Array.isArray(subSpecs) ||
-    typeof subSpecs === "function"
+    (type === "string" && (isString = true)) ||
+    (type === "function" && (isFunction = true)) ||
+    (isArray = Array.isArray(subSpecs)) ||
+    (type === "object" && (isObject = true))
   ) {
     // valid specs type
   } else {
@@ -541,7 +551,7 @@ function processNormalProp(
     );
   }
 
-  if (returnSpecs && typeof subSpecs !== "function") {
+  if (returnSpecs && !isFunction) {
     returnValue[prop] = imj(subSpecs);
     return nextState;
   }
@@ -561,11 +571,20 @@ function processNormalProp(
     : nextState[prop];
   let nextPropValue;
 
-  if (typeof subSpecs === "function") {
-    modifier = new Modifier(prevPropValue, args);
+  if (isFunction) {
+    modifier = new Modifier(
+      prevPropValue,
+      getContextVars(prevPropValue, nextState, args)
+    );
     nextPropValue = subSpecs(modifier);
-  } else if (typeof subSpecs === "string") {
-    nextPropValue = getValue(subSpecs, args);
+  } else if (isString) {
+    nextPropValue = getValue(
+      subSpecs,
+      getContextVars(prevPropValue, nextState, args)
+    );
+  } else if (isArray) {
+    // support pro: [value]
+    nextPropValue = subSpecs[0];
   } else {
     nextPropValue = processSpecs(
       prevPropValue,
@@ -613,11 +632,15 @@ function processNormalProp(
   return nextState;
 }
 
+function getContextVars(value, output, args, index) {
+  return {value, output, index, ...args};
+}
+
 function processSpecs(state = {}, specs = {}, args = {}, path = "") {
   let nextState = state;
   let returnSpecs = false;
   let returnValue = {};
-  const entries = Array.isArray(specs) ? specs.slice(0) : Object.entries(specs);
+  const entries = getSpecEntries(specs);
   const length = entries.length;
   for (let i = 0; i < length; i++) {
     let [prop, subSpecs] = entries[i];
@@ -646,7 +669,7 @@ function processSpecs(state = {}, specs = {}, args = {}, path = "") {
           path
         );
       } else if (prop === "$extend") {
-        const nextSpecs = subSpecs({ value: nextState, ...args });
+        const nextSpecs = subSpecs(getContextVars(nextState, nextState, args));
         if (nextSpecs) {
           nextState = processSpecs(
             state,
@@ -686,6 +709,33 @@ function processSpecs(state = {}, specs = {}, args = {}, path = "") {
   return returnSpecs ? returnValue : nextState;
 }
 
+function getSpecEntries(specs) {
+  let cachedSpecEntries = specEntryCache.get(specs);
+  if (!cachedSpecEntries) {
+    const originalEntries = Array.isArray(specs)
+      ? specs.slice(0)
+      : Object.entries(specs);
+    if (
+      originalEntries.some(([prop]) => prop[0] === "$" && /^\$scope/.test(prop))
+    ) {
+      cachedSpecEntries = [];
+      for (let i = 0; i < originalEntries.length; i++) {
+        const [prop, subSpecs] = originalEntries[i];
+        if (prop[0] === "$" && /^\$scope/.test(prop)) {
+          cachedSpecEntries.push(...getSpecEntries(subSpecs));
+        } else {
+          cachedSpecEntries.push(originalEntries[i]);
+        }
+      }
+    } else {
+      cachedSpecEntries = originalEntries;
+    }
+    specEntryCache.set(specs, cachedSpecEntries);
+  }
+
+  return cachedSpecEntries;
+}
+
 function getValue(path, target) {
   return (Array.isArray(path) ? path : path.split(".")).reduce(
     (target, prop) => {
@@ -702,8 +752,9 @@ export default function imj(...inputs) {
   if (inputs.length > 1) {
     return imj(inputs[1])(inputs[0], ...inputs.slice(2));
   }
-  const [specs = {}] = inputs;
-  return (state, ...args) => {
+  let [specs = {}] = inputs;
+  const originalSpecs = specs;
+  const f = (state, ...args) => {
     if (state instanceof Modifier) {
       state = state.value;
     }
@@ -718,4 +769,14 @@ export default function imj(...inputs) {
       }, {})
     });
   };
+  return Object.assign(f, {
+    extend(...newSpecs) {
+      specs = Object.assign({}, specs, ...newSpecs);
+      return f;
+    },
+    reset() {
+      specs = originalSpecs;
+      return f;
+    }
+  });
 }
